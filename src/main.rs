@@ -25,8 +25,9 @@ fn main() {
             }),
             GgrsPlugin::<Config>::default(),
             RapierPhysicsPlugin::<NoUserData>::default(),
+            RapierDebugRenderPlugin::default(),
         ))
-        .rollback_component_with_clone::<Transform>()
+        .rollback_component_with_clone::<RigidBody>()
         .insert_resource(ClearColor(Color::rgb(0.9, 0.3, 0.6)))
         .add_systems(
             Startup,
@@ -36,12 +37,12 @@ fn main() {
             Update,
             (
                 wait_for_players,
-                car_movement_system,
+                // REMOVED: car_movement_system
                 border_collision_system,
             ),
         )
         .add_systems(ReadInputs, read_local_inputs)
-        .add_systems(GgrsSchedule, (car_input_system))
+        .add_systems(GgrsSchedule, car_input_system) // Ensure input system is in GgrsSchedule
         .run();
 }
 
@@ -110,10 +111,6 @@ impl Default for Car {
         }
     }
 }
-
-// Component to store velocity
-#[derive(Component, Default)]
-struct Velocity(Vec2);
 
 fn start_matchbox_socket(mut commands: Commands) {
     let room_url = "ws://127.0.0.1:3536/extreme_bevy?next=2";
@@ -189,12 +186,13 @@ fn spawn_players(mut commands: Commands, asset_server: Res<AssetServer>) {
     //     .add_rollback();
     commands
         .spawn((
-            RigidBody::KinematicPositionBased,
+            RigidBody::Dynamic,
             Car::default(),
             Velocity::default(),
             Player { handle: 0 },
             Visibility::Visible,
             Transform::from_xyz(-200.0, 0.0, 0.0),
+            GravityScale(0.0),
             ActiveEvents::COLLISION_EVENTS,
         ))
         .with_children(|children| {
@@ -206,12 +204,13 @@ fn spawn_players(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     commands
         .spawn((
-            RigidBody::KinematicPositionBased,
+            RigidBody::Dynamic,
             Car::default(),
             Velocity::default(),
             Player { handle: 1 },
             Visibility::Visible,
             Transform::from_xyz(200.0, 0.0, 0.0),
+            GravityScale(0.0),
             ActiveEvents::COLLISION_EVENTS,
         ))
         .with_children(|children| {
@@ -329,17 +328,17 @@ fn car_input_system(
         let is_drifting = input & INPUT_DRIFT != 0;
 
         // Physics processing
-        let speed = velocity.0.length();
+        let speed = velocity.linvel.length();
 
         // Skip physics if the car is barely moving
         if speed < 1.0 {
-            velocity.0 = Vec2::ZERO;
+            velocity.linvel = Vec2::ZERO;
 
             // Still process inputs for a stationary car
             if forward_input != 0.0 {
                 // Accelerate in the forward direction
                 let acceleration = forward * forward_input * car.acceleration * dt;
-                velocity.0 += acceleration;
+                velocity.linvel += acceleration;
             }
 
             continue;
@@ -349,7 +348,7 @@ fn car_input_system(
         if speed > MIN_SPEED_TO_STEER {
             // Rotate based on steering and forward direction
             // Multiply by sign of forward velocity to reverse steering when going backward
-            let forward_sign = forward.dot(velocity.0).signum();
+            let forward_sign = forward.dot(velocity.linvel).signum();
             transform.rotate(Quat::from_rotation_z(
                 steer_input * car.steering_speed * dt * forward_sign,
             ));
@@ -358,7 +357,7 @@ fn car_input_system(
         // Accelerate in the forward direction
         if forward_input != 0.0 {
             let acceleration = forward * forward_input * car.acceleration * dt;
-            velocity.0 += acceleration;
+            velocity.linvel += acceleration;
         }
 
         // Friction and drift physics
@@ -370,20 +369,19 @@ fn car_input_system(
         };
 
         // Project current velocity onto forward and lateral directions
-        let forward_velocity = forward * velocity.0.dot(forward);
-        let lateral_velocity = velocity.0 - forward_velocity;
+        let forward_velocity = forward * velocity.linvel.dot(forward);
+        let lateral_velocity = velocity.linvel - forward_velocity;
 
         // Apply lateral friction - the core of the drift mechanic
         let friction_force = lateral_velocity * friction;
-        velocity.0 -= friction_force * dt * 10.0; // Increased effect for more noticeable drifting
+        velocity.linvel -= friction_force * dt * 10.0; // Increased effect for more noticeable drifting
 
         // Also apply some forward friction (engine/rolling resistance)
         let forward_friction = 0.1; // Much less than lateral friction
-        velocity.0 -= forward_velocity * forward_friction * dt;
+        velocity.linvel -= forward_velocity * forward_friction * dt;
 
-        // Clamp velocity to max speed
-        if velocity.0.length() > car.max_speed {
-            velocity.0 = velocity.0.normalize() * car.max_speed;
+        if velocity.linvel.length() > car.max_speed {
+            velocity.linvel = velocity.linvel.normalize() * car.max_speed;
         }
     }
 }
@@ -394,6 +392,6 @@ fn car_movement_system(mut query: Query<(&mut Transform, &Velocity)>, time: Res<
         let dt = time.delta_secs();
 
         // Update position based on velocity
-        transform.translation += Vec3::new(velocity.0.x, velocity.0.y, 0.0) * dt;
+        transform.translation += Vec3::new(velocity.linvel.x, velocity.linvel.y, 0.0) * dt;
     }
 }
