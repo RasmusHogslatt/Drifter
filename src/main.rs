@@ -6,6 +6,7 @@ use bevy::{prelude::*, render::camera::ScalingMode, tasks::IoTaskPool};
 use bevy_ggrs::*;
 use bevy_matchbox::matchbox_socket::{PeerId, WebRtcSocket};
 use bevy_matchbox::MatchboxSocket;
+use bevy_rapier2d::prelude::*;
 
 const MIN_SPEED_TO_STEER: f32 = 10.0;
 
@@ -23,10 +24,22 @@ fn main() {
                 ..default()
             }),
             GgrsPlugin::<Config>::default(),
+            RapierPhysicsPlugin::<NoUserData>::default(),
         ))
         .rollback_component_with_clone::<Transform>()
-        .add_systems(Startup, (setup, spawn_players, start_matchbox_socket))
-        .add_systems(Update, (wait_for_players, car_movement_system))
+        .insert_resource(ClearColor(Color::rgb(0.9, 0.3, 0.6)))
+        .add_systems(
+            Startup,
+            (setup, spawn_players, start_matchbox_socket, spawn_map),
+        )
+        .add_systems(
+            Update,
+            (
+                wait_for_players,
+                car_movement_system,
+                border_collision_system,
+            ),
+        )
         .add_systems(ReadInputs, read_local_inputs)
         .add_systems(GgrsSchedule, (car_input_system))
         .run();
@@ -39,7 +52,7 @@ const INPUT_RIGHT: u8 = 1 << 3;
 const INPUT_DRIFT: u8 = 1 << 4;
 
 type Config = bevy_ggrs::GgrsConfig<u8, PeerId>;
-
+// TODO: Skapa hjälpfunktioner för att beräkna drift
 fn read_local_inputs(
     mut commands: Commands,
     keys: Res<ButtonInput<KeyCode>>,
@@ -52,7 +65,7 @@ fn read_local_inputs(
             input |= INPUT_FORWARD;
             println!("forward for player {}", handle);
         }
-        if keys.any_pressed([KeyCode::ArrowDown, KeyCode::KeyA]) {
+        if keys.any_pressed([KeyCode::ArrowDown, KeyCode::KeyS]) {
             input |= INPUT_REVERSE;
         }
         if keys.any_pressed([KeyCode::ArrowLeft, KeyCode::KeyA]) {
@@ -73,6 +86,8 @@ fn read_local_inputs(
 struct Player {
     handle: usize,
 }
+#[derive(Component)]
+struct Border;
 
 // Component for our car entity
 #[derive(Component)]
@@ -143,35 +158,139 @@ fn wait_for_players(mut commands: Commands, mut socket: ResMut<MatchboxSocket>) 
     commands.insert_resource(bevy_ggrs::Session::P2P(ggrs_session));
 }
 
-// fn spawn_player(mut commands: Commands, asset_server: Res<AssetServer>) {
-//     commands
-//         .spawn(Sprite::from_image(asset_server.load("car.png")))
-//         .insert(Player{handle: 0})
-//         .insert(Car::default())
-//         .insert(Velocity::default())
-//         .add_rollback();
-// }
-
 fn spawn_players(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Spawn first car (player 0) on the left side
+    // commands
+    //     .spawn(Sprite::from_image(asset_server.load("car.png")))
+    //     .insert(Player { handle: 0 })
+    //     .insert(Car::default())
+    //     .insert(Velocity::default())
+    //     .insert(Collider::cuboid(25.0, 12.5))
+    //     .insert(RigidBody::Dynamic)
+    //     // .insert(Transform::from_xyz(-200.0, 0.0, 0.0)) // Position on the left
+    //     .insert(ActiveEvents::COLLISION_EVENTS)
+    //     .with_children(|children| {
+    //         children
+    //             .spawn(Collider::cuboid(25.0, 12.5))
+    //             .insert(Transform::from_xyz(-200.0, 0.0, 0.0))
+    //     })
+    //     .add_rollback();
+
+    // Spawn second car (player 1) on the right side
+    // commands
+    //     .spawn(Sprite::from_image(asset_server.load("car.png")))
+    //     .insert(Player { handle: 1 })
+    //     .insert(Car::default())
+    //     .insert(Velocity::default())
+    //     .insert(Collider::cuboid(25.0, 12.5))
+    //     .insert(RigidBody::Dynamic)
+    //     .insert(Transform::from_xyz(200.0, 0.0, 0.0)) // Position on the right
+    //     .insert(ActiveEvents::COLLISION_EVENTS)
+    //     .add_rollback();
     commands
-        .spawn(Sprite::from_image(asset_server.load("car.png")))
-        .insert(Player { handle: 0 })
-        .insert(Car::default())
-        .insert(Velocity::default())
+        .spawn((
+            RigidBody::KinematicPositionBased,
+            Car::default(),
+            Velocity::default(),
+            Player { handle: 0 },
+            Visibility::Visible,
+            Transform::from_xyz(-200.0, 0.0, 0.0),
+            ActiveEvents::COLLISION_EVENTS,
+        ))
+        .with_children(|children| {
+            children
+                .spawn(Collider::cuboid(25.0, 12.5))
+                .insert(Sprite::from_image(asset_server.load("car.png")));
+        })
         .add_rollback();
 
     commands
-        .spawn(Sprite::from_image(asset_server.load("car.png")))
-        .insert(Player { handle: 1 })
-        .insert(Car::default())
-        .insert(Velocity::default())
+        .spawn((
+            RigidBody::KinematicPositionBased,
+            Car::default(),
+            Velocity::default(),
+            Player { handle: 1 },
+            Visibility::Visible,
+            Transform::from_xyz(200.0, 0.0, 0.0),
+            ActiveEvents::COLLISION_EVENTS,
+        ))
+        .with_children(|children| {
+            children
+                .spawn(Collider::cuboid(25.0, 12.5))
+                .insert(Sprite::from_image(asset_server.load("car.png")));
+        })
         .add_rollback();
+}
+fn border_collision_system(
+    mut collision_events: EventReader<CollisionEvent>,
+    car_query: Query<(), With<Car>>,
+    border_query: Query<(), With<Border>>,
+) {
+    for event in collision_events.read() {
+        if let CollisionEvent::Started(entity1, entity2, _) = event {
+            let car_involved = car_query.get(*entity1).is_ok() || car_query.get(*entity2).is_ok();
+            let border_involved =
+                border_query.get(*entity1).is_ok() || border_query.get(*entity2).is_ok();
+
+            if car_involved && border_involved {
+                println!("A car has driven over a border collider!");
+            }
+        }
+    }
 }
 
 // Setup our scene with a camera and car entity
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     // Camera
     commands.spawn(Camera2d::default());
+    // commands.spawn(Back)
+}
+
+fn spawn_map(mut commands: Commands, asset_server: Res<AssetServer>) {
+    // Define map dimensions and border thickness
+    let map_width = 300.0;
+    let map_height = 300.0;
+    let border_thickness = 10.0;
+
+    // Left border
+    commands.spawn((
+        Collider::cuboid(border_thickness / 2.0, map_height / 2.0),
+        Transform::from_xyz(-map_width / 2.0 - border_thickness / 2.0, 0.0, 1.0),
+        GlobalTransform::default(),
+        RigidBody::Fixed,
+        Border,
+        ActiveEvents::COLLISION_EVENTS,
+    ));
+
+    // Right border
+    commands.spawn((
+        Collider::cuboid(border_thickness / 2.0, map_height / 2.0),
+        Transform::from_xyz(map_width / 2.0 + border_thickness / 2.0, 0.0, 1.0),
+        GlobalTransform::default(),
+        RigidBody::Fixed,
+        Border,
+        ActiveEvents::COLLISION_EVENTS,
+    ));
+
+    // Top border
+    commands.spawn((
+        Collider::cuboid(map_width / 2.0, border_thickness / 2.0),
+        Transform::from_xyz(0.0, map_height / 2.0 + border_thickness / 2.0, 1.0),
+        GlobalTransform::default(),
+        RigidBody::Fixed,
+        Border,
+        ActiveEvents::COLLISION_EVENTS,
+    ));
+
+    // Bottom border
+    commands.spawn((
+        Collider::cuboid(map_width / 2.0, border_thickness / 2.0),
+        Transform::from_xyz(0.0, -map_height / 2.0 - border_thickness / 2.0, 1.0),
+        GlobalTransform::default(),
+        RigidBody::Fixed,
+        Border,
+        ActiveEvents::COLLISION_EVENTS,
+    ));
 }
 
 // System to handle input and update car velocity and rotation
@@ -184,8 +303,9 @@ fn car_input_system(
         let (input, _) = inputs[player.handle];
         let dt = time.delta_secs();
 
+        // Input processing
         // Calculate forward vector from the car's current rotation
-        let forward = transform.rotation.mul_vec3(Vec3::Y).truncate();
+        let forward = transform.rotation.mul_vec3(Vec3::Y).truncate().normalize();
 
         // Forward/backward input
         let mut forward_input = 0.0;
@@ -205,8 +325,28 @@ fn car_input_system(
             steer_input -= 1.0;
         }
 
-        // Only allow steering when the car is moving
-        if velocity.0.length() > MIN_SPEED_TO_STEER {
+        // Determine if drifting is active
+        let is_drifting = input & INPUT_DRIFT != 0;
+
+        // Physics processing
+        let speed = velocity.0.length();
+
+        // Skip physics if the car is barely moving
+        if speed < 1.0 {
+            velocity.0 = Vec2::ZERO;
+
+            // Still process inputs for a stationary car
+            if forward_input != 0.0 {
+                // Accelerate in the forward direction
+                let acceleration = forward * forward_input * car.acceleration * dt;
+                velocity.0 += acceleration;
+            }
+
+            continue;
+        }
+
+        // Only allow steering when the car is moving at sufficient speed
+        if speed > MIN_SPEED_TO_STEER {
             // Rotate based on steering and forward direction
             // Multiply by sign of forward velocity to reverse steering when going backward
             let forward_sign = forward.dot(velocity.0).signum();
@@ -216,42 +356,18 @@ fn car_input_system(
         }
 
         // Accelerate in the forward direction
-        let acceleration = forward * forward_input * car.acceleration * dt;
-        velocity.0 += acceleration;
-
-        // Clamp velocity to max speed
-        if velocity.0.length() > car.max_speed {
-            velocity.0 = velocity.0.normalize() * car.max_speed;
-        }
-    }
-}
-
-// System to update physics (simulate friction and drifting)
-fn car_physics_system(
-    time: Res<Time>,
-    mut query: Query<(&Car, &mut Velocity, &Transform, &Player)>,
-    inputs: Res<PlayerInputs<Config>>,
-) {
-    for (car, mut velocity, transform, player) in query.iter_mut() {
-        let (input, _) = inputs[player.handle];
-        let dt = time.delta_secs();
-
-        // Skip physics if the car is barely moving
-        if velocity.0.length_squared() < 1.0 {
-            velocity.0 = Vec2::ZERO;
-            continue;
+        if forward_input != 0.0 {
+            let acceleration = forward * forward_input * car.acceleration * dt;
+            velocity.0 += acceleration;
         }
 
-        // Determine friction coefficient based on drifting (space bar)
-        let is_drifting = input & INPUT_DRIFT != 0;
+        // Friction and drift physics
+        // Determine friction coefficient based on drifting
         let friction = if is_drifting {
             car.drift_friction
         } else {
             car.normal_friction
         };
-
-        // Calculate the forward vector for the car
-        let forward = transform.rotation.mul_vec3(Vec3::Y).truncate().normalize();
 
         // Project current velocity onto forward and lateral directions
         let forward_velocity = forward * velocity.0.dot(forward);
@@ -264,6 +380,11 @@ fn car_physics_system(
         // Also apply some forward friction (engine/rolling resistance)
         let forward_friction = 0.1; // Much less than lateral friction
         velocity.0 -= forward_velocity * forward_friction * dt;
+
+        // Clamp velocity to max speed
+        if velocity.0.length() > car.max_speed {
+            velocity.0 = velocity.0.normalize() * car.max_speed;
+        }
     }
 }
 
