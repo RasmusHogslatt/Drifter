@@ -2346,6 +2346,7 @@ dependencies = [
  "bevy_ggrs",
  "bevy_matchbox",
  "bevy_rapier2d",
+ "getrandom",
 ]
 
 [[package]]

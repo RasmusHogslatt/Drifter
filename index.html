@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drifter Game</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #2e2e2e;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: black;
+        }
+
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #loading {
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div id="loading">Loading game...</div>
+    </div>
+    <script>
+        // This will help with loading indicators
+        window.addEventListener('load', function () {
+            // Hide loading text when the game has loaded
+            document.addEventListener('DOMContentLoaded', function () {
+                setTimeout(function () {
+                    const loadingElement = document.getElementById('loading');
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                    }
+                }, 3000); // Give some time for the game to initialize
+            });
+        });
+    </script>
+    <script type="module">
+        import init from './drifter.js';
+        init().catch(console.error);
+    </script>
+</body>
+
+</html>

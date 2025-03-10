@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master] # Set this to your default branch
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          override: true
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli
+
+      - name: Install trunk
+        run: cargo install trunk
+
+      - name: Build
+        run: |
+          # Build the project for WASM
+          cargo build --release --target wasm32-unknown-unknown
+
+          # Generate bindings
+          wasm-bindgen --out-dir ./target/wasm --target web ./target/wasm32-unknown-unknown/release/drifter.wasm
+
+          # Move necessary files to a deployment directory
+          mkdir -p dist
+          cp index.html dist/
+          cp ./target/wasm/* dist/
+
+          # If you have any assets, copy them too
+          mkdir -p dist/assets
+          cp -R assets/* dist/assets/ || echo "No assets to copy"
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@4.1.4
+        with:
+          branch: gh-pages
+          folder: dist
