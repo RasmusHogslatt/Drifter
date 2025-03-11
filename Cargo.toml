@@ -1,22 +1,9 @@
-# [package]
-# name = "drifter"
-# version = "0.1.0"
-# edition = "2021"
-
-# [dependencies]
-# bevy = "0.15"
-# bevy_ggrs = { version = "0.17", features = ["wasm-bindgen"] }
-# bevy_matchbox = { version = "0.11", features = ["ggrs"] }
-# bevy_rapier2d = { version = "0.29" }
-
-# [profile.dev.package."*"]
-# opt-level = 2
 [package]
 name = "drifter"
 version = "0.1.0"
 edition = "2021"
 description = "A multiplayer drift racing game"
-repository = "https://github.com/yourusername/drifter"
+repository = "https://github.com/RasmusHogslatt/drifter"
 license = "MIT"
 
 [dependencies]
