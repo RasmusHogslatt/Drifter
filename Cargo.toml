@@ -3,7 +3,7 @@ name = "drifter"
 version = "0.1.0"
 edition = "2021"
 description = "A multiplayer drift racing game"
-repository = "https://github.com/RasmusHogslatt/drifter"
+repository = "https://github.com/RasmusHogslatt/Drifter"
 license = "MIT"
 
 [dependencies]
