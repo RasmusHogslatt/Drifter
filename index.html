@@ -78,8 +78,9 @@
             });
         </script>
         <script type="module">
-            import init from "./drifter.js";
-            init().catch(console.error);
+            import init, * as bindings from "/drifter-fbf8e6ef72bb49cb.js";
+            window.wasmBindings = bindings;
+            init("/drifter-fbf8e6ef72bb49cb_bg.wasm");
         </script>
     </body>
 </html>
