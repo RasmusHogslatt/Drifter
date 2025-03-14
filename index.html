@@ -1,87 +1,89 @@
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Drifter Game</title>
 
-        <link data-trunk rel="rust" data-wasm-opt="2" />
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Drifter Game</title>
 
-        <base data-trunk-public-url />
-        <link data-trunk rel="copy-file" href="assets/sw.js" />
-        <link data-trunk rel="icon" href="assets/favicon.ico" />
-        <link
-            data-trunk
-            rel="copy-file"
-            href="assets/car.png"
-            data-target-path="assets"
-        />
-        <link
-            data-trunk
-            rel="copy-file"
-            href="assets/sand.png"
-            data-target-path="assets"
-        />
-        <style>
-            html,
-            body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                height: 100%;
-                overflow: hidden;
-                background-color: #2e2e2e;
-            }
+    <link data-trunk rel="rust" data-wasm-opt="2" />
 
-            canvas {
-                display: block;
-                margin: 0 auto;
-                background-color: black;
-            }
 
-            .game-container {
-                width: 100%;
-                height: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
+    <base data-trunk-public-url />
+    <link data-trunk rel="copy-file" href="assets/sw.js" />
+    <link data-trunk rel="icon" href="assets/favicon.ico" />
+    <link data-trunk rel="copy-file" href="assets/car.png" data-target-path="assets" />
+    <link data-trunk rel="copy-file" href="assets/sand.png" data-target-path="assets" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #2e2e2e;
+        }
 
-            #loading {
-                color: white;
-                font-family: Arial, sans-serif;
-                text-align: center;
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-            }
-        </style>
-    </head>
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: black;
+        }
 
-    <body>
-        <div class="game-container">
-            <div id="loading">Loading game...</div>
-        </div>
-        <script>
-            // This will help with loading indicators
-            window.addEventListener("load", function () {
-                // Hide loading text when the game has loaded
-                document.addEventListener("DOMContentLoaded", function () {
-                    setTimeout(function () {
-                        const loadingElement =
-                            document.getElementById("loading");
-                        if (loadingElement) {
-                            loadingElement.style.display = "none";
-                        }
-                    }, 3000); // Give some time for the game to initialize
-                });
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #loading {
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="game-container">
+        <div id="loading">Loading game...</div>
+    </div>
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator && window.location.hash !== "#dev") {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('./sw.js').then(
+                    registration => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    },
+                    err => {
+                        console.error('ServiceWorker registration failed:', err);
+                    }
+                );
             });
-        </script>
-        <script type="module">
-            import init, * as bindings from "/drifter-fbf8e6ef72bb49cb.js";
-            window.wasmBindings = bindings;
-            init("/drifter-fbf8e6ef72bb49cb_bg.wasm");
-        </script>
-    </body>
+        }
+    </script>
+
+    <!-- Load and initialize your WASM module -->
+    <script type="module">
+        import init, * as bindings from "./drifter.js";
+        window.wasmBindings = bindings;
+        init("./drifter_bg.wasm").then(() => {
+            const loadingElement = document.getElementById("loading");
+            if (loadingElement) {
+                loadingElement.style.display = "none";
+            }
+        });
+    </script>
+
+</body>
+
+
 </html>
