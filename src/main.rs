@@ -38,16 +38,16 @@ fn main() {
                 spawn_map,
             ),
         )
-        .add_systems(
-            Update,
-            (
-                wait_for_players,
-                // REMOVED: car_movement_system
-                border_collision_system,
-            ),
-        )
-        .add_systems(ReadInputs, read_local_inputs)
-        .add_systems(GgrsSchedule, car_input_system) // Ensure input system is in GgrsSchedule
+        // .add_systems(
+        //     Update,
+        //     (
+        //         // wait_for_players,
+        //         // REMOVED: car_movement_system
+        //         border_collision_system,
+        //     ),
+        // )
+        // .add_systems(ReadInputs, read_local_inputs)
+        // .add_systems(GgrsSchedule, car_input_system) // Ensure input system is in GgrsSchedule
         .run();
 }
 
