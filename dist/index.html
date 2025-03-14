@@ -68,15 +68,20 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
     </div>
     <!-- Service Worker Registration -->
     <script>
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && window.location.hash !== "#dev") {
             window.addEventListener('load', function () {
                 navigator.serviceWorker.register('./sw.js').then(
-                    () => console.log('Service Worker Registered'),
-                    err => console.error('Service Worker failed:', err)
+                    registration => {
+                        console.log('ServiceWorker registration successful:', registration.scope);
+                    },
+                    err => {
+                        console.error('ServiceWorker registration failed:', err);
+                    }
                 );
             });
         }
     </script>
+
     <!-- Load and initialize your WASM module -->
     <script type="module">
         import init, * as bindings from "./drifter.js";
