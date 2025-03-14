@@ -31,7 +31,12 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.9, 0.3, 0.6)))
         .add_systems(
             Startup,
-            (setup, spawn_players, start_matchbox_socket, spawn_map),
+            (
+                setup,
+                spawn_players,
+                // start_matchbox_socket,
+                spawn_map,
+            ),
         )
         .add_systems(
             Update,
