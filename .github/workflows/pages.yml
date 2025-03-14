@@ -12,74 +12,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - name: Setup toolchain for wasm
         run: |
           rustup update stable
           rustup default stable
           rustup set profile minimal
           rustup target add wasm32-unknown-unknown
+          
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
+        
       - name: Download and install Trunk binary
         run: wget -qO- https://github.com/thedodd/trunk/releases/latest/download/trunk-x86_64-unknown-linux-gnu.tar.gz | tar -xzf-
+        
       - name: Build
-        run: ./trunk build --release --public-url $public_url
-        env:
-          public_url: "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+        # Use the same public-url format as the example
+        run: ./trunk build --release --public-url /${{ github.event.repository.name }}/
+        
+      - name: Verify dist contents
+        run: |
+          echo "Contents of dist directory:"
+          ls -la dist/
+          
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@v4
         with:
+          branch: gh-pages
           folder: dist
           single-commit: true
-
-# name: Deploy to GitHub Pages
-
-# on:
-#   push:
-#     branches: [main] # Set this to your default branch
-#   workflow_dispatch:
-
-# permissions:
-#   contents: write
-
-# jobs:
-#   build-and-deploy:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v2
-
-#       - name: Install Rust toolchain
-#         uses: actions-rs/toolchain@v1
-#         with:
-#           toolchain: stable
-#           target: wasm32-unknown-unknown
-#           override: true
-
-#       - name: Install wasm-bindgen-cli
-#         run: cargo install wasm-bindgen-cli
-
-#       - name: Install trunk
-#         run: cargo install trunk
-
-#       - name: Build
-#         run: |
-#           # Build the project for WASM
-#           cargo build --release --target wasm32-unknown-unknown
-
-#           # Generate bindings
-#           wasm-bindgen --out-dir ./target/wasm --target web ./target/wasm32-unknown-unknown/release/drifter.wasm
-
-#           # Move necessary files to a deployment directory
-#           mkdir -p dist
-#           cp index.html dist/
-#           cp ./target/wasm/* dist/
-
-#           # If you have any assets, copy them too
-#           mkdir -p dist/assets
-#           cp -R assets/* dist/assets/ || echo "No assets to copy"
-
-#       - name: Deploy
-#         uses: JamesIves/github-pages-deploy-action@4.1.4
-#         with:
-#           branch: gh-pages
-#           folder: dist
