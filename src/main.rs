@@ -1,5 +1,6 @@
 use std::hash::Hash;
 
+use bevy::asset::AssetMetaCheck;
 use bevy::prelude::*;
 use bevy::utils::hashbrown::HashMap;
 use bevy::{prelude::*, render::camera::ScalingMode, tasks::IoTaskPool};
@@ -13,16 +14,21 @@ const MIN_SPEED_TO_STEER: f32 = 10.0;
 fn main() {
     App::new()
         .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
-                primary_window: Some(Window {
-                    // fill the entire browser window
-                    fit_canvas_to_parent: true,
-                    // don't hijack keyboard shortcuts like F5, F6, F12, Ctrl+R etc.
-                    prevent_default_event_handling: false,
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        // fill the entire browser window
+                        fit_canvas_to_parent: true,
+                        // don't hijack keyboard shortcuts like F5, F6, F12, Ctrl+R etc.
+                        prevent_default_event_handling: false,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(AssetPlugin {
+                    meta_check: AssetMetaCheck::Never,
                     ..default()
                 }),
-                ..default()
-            }),
             GgrsPlugin::<Config>::default(),
             RapierPhysicsPlugin::<NoUserData>::default(),
             RapierDebugRenderPlugin::default(),
