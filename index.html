@@ -52,35 +52,14 @@
 </head>
 
 <body>
-    <div class="game-container">
-        <div id="loading">Loading game...</div>
-    </div>
-    <!-- Service Worker Registration -->
+    <canvas id="game"></canvas>
+
     <script>
         if ('serviceWorker' in navigator && window.location.hash !== "#dev") {
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('./sw.js').then(
-                    registration => {
-                        console.log('ServiceWorker registration successful:', registration.scope);
-                    },
-                    err => {
-                        console.error('ServiceWorker registration failed:', err);
-                    }
-                );
+                navigator.serviceWorker.register('sw.js');
             });
         }
-    </script>
-
-    <!-- Load and initialize your WASM module -->
-    <script type="module">
-        import init, * as bindings from "./drifter.js";
-        window.wasmBindings = bindings;
-        init("./drifter_bg.wasm").then(() => {
-            const loadingElement = document.getElementById("loading");
-            if (loadingElement) {
-                loadingElement.style.display = "none";
-            }
-        });
     </script>
 
 </body>

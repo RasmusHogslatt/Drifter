@@ -2347,6 +2347,7 @@ dependencies = [
  "bevy_matchbox",
  "bevy_rapier2d",
  "getrandom",
+ "wasm-bindgen",
 ]
 
 [[package]]

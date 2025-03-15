@@ -60,38 +60,17 @@ dispatchEvent(new CustomEvent("TrunkApplicationStarted", {detail: {wasm}}));
             transform: translate(-50%, -50%);
         }
     </style>
-<link rel="modulepreload" href="/drifter.js" crossorigin="anonymous" integrity="sha384-Kfly/k2J3NjR22MfY5ZteRXFl4k34tqSrhfFkPuWk999EfPjwUslZLnS/lMShFm2"><link rel="preload" href="/drifter_bg.wasm" crossorigin="anonymous" integrity="sha384-z+NX0COg6AW/+RIphdM8aKqb/6R4l+cWYJNZCc7mC5ZZbIqqQew5p9y1qaFc8xQf" as="fetch" type="application/wasm"></head>
+<link rel="modulepreload" href="/drifter.js" crossorigin="anonymous" integrity="sha384-MlUc9VDgAyDq8Kwmfqlo4ykKexIE7TwtvGT6yz9ltXn5e2sSeRfgA+1m4mMH4T1K"><link rel="preload" href="/drifter_bg.wasm" crossorigin="anonymous" integrity="sha384-haqxe6gvrPAZcpPZZWj5M3k9pdHpbwAJxhWDb5EjlieUIV0XbxkJNeu4NCDk902E" as="fetch" type="application/wasm"></head>
 
 <body>
-    <div class="game-container">
-        <div id="loading">Loading game...</div>
-    </div>
-    <!-- Service Worker Registration -->
+    <canvas id="game"></canvas>
+
     <script>
         if ('serviceWorker' in navigator && window.location.hash !== "#dev") {
             window.addEventListener('load', function () {
-                navigator.serviceWorker.register('./sw.js').then(
-                    registration => {
-                        console.log('ServiceWorker registration successful:', registration.scope);
-                    },
-                    err => {
-                        console.error('ServiceWorker registration failed:', err);
-                    }
-                );
+                navigator.serviceWorker.register('sw.js');
             });
         }
-    </script>
-
-    <!-- Load and initialize your WASM module -->
-    <script type="module">
-        import init, * as bindings from "./drifter.js";
-        window.wasmBindings = bindings;
-        init("./drifter_bg.wasm").then(() => {
-            const loadingElement = document.getElementById("loading");
-            if (loadingElement) {
-                loadingElement.style.display = "none";
-            }
-        });
     </script>
 
 </body>
