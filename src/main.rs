@@ -31,23 +31,18 @@ fn main() {
         .insert_resource(ClearColor(Color::rgb(0.9, 0.3, 0.6)))
         .add_systems(
             Startup,
+            (setup, spawn_players, start_matchbox_socket, spawn_map),
+        )
+        .add_systems(
+            Update,
             (
-                setup,
-                spawn_players,
-                // start_matchbox_socket,
-                spawn_map,
+                wait_for_players,
+                // REMOVED: car_movement_system
+                border_collision_system,
             ),
         )
-        // .add_systems(
-        //     Update,
-        //     (
-        //         // wait_for_players,
-        //         // REMOVED: car_movement_system
-        //         border_collision_system,
-        //     ),
-        // )
-        // .add_systems(ReadInputs, read_local_inputs)
-        // .add_systems(GgrsSchedule, car_input_system) // Ensure input system is in GgrsSchedule
+        .add_systems(ReadInputs, read_local_inputs)
+        .add_systems(GgrsSchedule, car_input_system) // Ensure input system is in GgrsSchedule
         .run();
 }
 

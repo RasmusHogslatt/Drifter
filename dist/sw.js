@@ -4,8 +4,8 @@ var filesToCache = [
   "./index.html",
   "./drifter.js",
   "./drifter_bg.wasm",
-  "./assets/car.png",
-  "./assets/sand.png"
+  // "./assets/car.png",
+  // "./assets/sand.png"
 ];
 
 self.addEventListener('install', function (e) {
