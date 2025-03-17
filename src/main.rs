@@ -119,7 +119,8 @@ impl Default for Car {
 }
 
 fn start_matchbox_socket(mut commands: Commands) {
-    let room_url = "wss://192.168.10.100:3536/extreme_bevy?next=2";
+    // let room_url = "wss://192.168.10.100:3536/extreme_bevy?next=2";
+    let room_url = "wss://rasmusmatchbox.duckdns.org/extreme_bevy?next=2";
     info!("connecting to matchbox server: {room_url}");
     commands.insert_resource(MatchboxSocket::new_unreliable(room_url));
 }
